@@ -2,7 +2,7 @@ from cohere.client import Client
 from cohere.client_async import AsyncClient
 from cohere.error import CohereAPIError, CohereConnectionError, CohereError
 
-COHERE_API_URL = "https://api.cohere.ai"
+COHERE_API_URL = "https://dev.api.cohere.ai"
 RETRY_STATUS_CODES = [429, 500, 502, 503, 504]
 
 API_VERSION = "1"
@@ -16,6 +16,7 @@ GENERATE_PREFERENCE_FEEDBACK_URL = "feedback/generate/preference"
 GENERATE_URL = "generate"
 SUMMARIZE_URL = "summarize"
 RERANK_URL = "rerank"
+DATASET_URL = "dataset"
 
 CHECK_API_KEY_URL = "check-api-key"
 TOKENIZE_URL = "tokenize"

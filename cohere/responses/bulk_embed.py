@@ -8,8 +8,9 @@ class BulkEmbedJob(CohereObject, JobWithStatus):
     job_id: str
     status: str
     created_at: str
-    input_url: str
+    input_url: Optional[str]
     output_urls: Optional[List[str]]
+    output_dataset_id: Optional[str]
     model: str
     truncate: str
     percent_complete: float
@@ -20,8 +21,9 @@ class BulkEmbedJob(CohereObject, JobWithStatus):
         job_id: str,
         status: str,
         created_at: str,
-        input_url: str,
+        input_url: Optional[str],
         output_urls: Optional[List[str]],
+        output_dataset_id: Optional[str],
         model: str,
         truncate: str,
         percent_complete: float,
@@ -32,6 +34,7 @@ class BulkEmbedJob(CohereObject, JobWithStatus):
         self.created_at = created_at
         self.input_url = input_url
         self.output_urls = output_urls
+        self.output_dataset_id = output_dataset_id
         self.model = model
         self.truncate = truncate
         self.percent_complete = percent_complete
@@ -43,8 +46,9 @@ class BulkEmbedJob(CohereObject, JobWithStatus):
             job_id=data["job_id"],
             status=data["status"],
             created_at=data["created_at"],
-            input_url=data["input_url"],
+            input_url=data.get("input_url"),
             output_urls=data.get("output_urls"),
+            output_dataset_id=data.get("output_dataset_id"),
             model=data["model"],
             truncate=data["truncate"],
             percent_complete=data["percent_complete"],

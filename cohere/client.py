@@ -4,7 +4,7 @@ from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from functools import partial
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Union
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -26,6 +26,7 @@ from cohere.responses.chat import Chat, StreamingChat
 from cohere.responses.classify import Example as ClassifyExample
 from cohere.responses.classify import LabelPrediction
 from cohere.responses.cluster import ClusterJobResult, CreateClusterJobResponse
+from cohere.responses.dataset import Dataset
 from cohere.responses.detectlang import DetectLanguageResponse, Language
 from cohere.responses.embeddings import Embeddings
 from cohere.responses.feedback import (
@@ -583,6 +584,17 @@ class Client:
             rank.document = parsed_docs[rank.index]
         return reranking
 
+    def create_dataset(self, name: str, data: BinaryIO, dataset_type: str) -> Dataset:
+        files = {"file": data}
+        create_response = self._request(f"{cohere.DATASET_URL}?name={name}&type={dataset_type}", files=files)
+        return self.get_dataset(id=create_response["id"])
+
+    def get_dataset(self, id: str) -> Dataset:
+        if not id:
+            raise CohereError(message="id must not be empty")
+        response = self._request(f"{cohere.DATASET_URL}/{id}", method="GET")
+        return Dataset.from_dict(response["dataset"])
+
     def _check_response(self, json_response: Dict, headers: Dict, status_code: int):
         if "X-API-Warning" in headers:
             logger.warning(headers["X-API-Warning"])
@@ -601,12 +613,13 @@ class Client:
         if status_code >= 500:
             raise CohereError(message=f"Unexpected server error (status {status_code}): {json_response}")
 
-    def _request(self, endpoint, json=None, method="POST", stream=False) -> Any:
+    def _request(self, endpoint, json=None, files=None, method="POST", stream=False) -> Any:
         headers = {
             "Authorization": "BEARER {}".format(self.api_key),
-            "Content-Type": "application/json",
             "Request-Source": self.request_source,
         }
+        if json:
+            headers["Content-Type"] = "application/json"
 
         url = f"{self.api_url}/{self.api_version}/{endpoint}"
         with requests.Session() as session:
@@ -625,7 +638,7 @@ class Client:
 
             try:
                 response = session.request(
-                    method, url, headers=headers, json=json, timeout=self.timeout, **self.request_dict
+                    method, url, headers=headers, json=json, files=files, timeout=self.timeout, **self.request_dict
                 )
             except requests.exceptions.ConnectionError as e:
                 raise CohereConnectionError(str(e)) from e
@@ -732,7 +745,7 @@ class Client:
 
     def create_bulk_embed_job(
         self,
-        input_file_url: str,
+        input_dataset_id: str,
         model: Optional[str] = None,
         truncate: Optional[str] = None,
         compress: Optional[bool] = None,
@@ -756,7 +769,7 @@ class Client:
         """
 
         json_body = {
-            "input_file_url": input_file_url,
+            "input_dataset_id": input_dataset_id,
             "model": model,
             "truncate": truncate,
             "compress": compress,
