@@ -2,7 +2,7 @@ from cohere.client import Client
 from cohere.client_async import AsyncClient
 from cohere.error import CohereAPIError, CohereConnectionError, CohereError
 
-COHERE_API_URL = "https://dev.api.cohere.ai"
+COHERE_API_URL = "https://api.cohere.ai"
 RETRY_STATUS_CODES = [429, 500, 502, 503, 504]
 
 API_VERSION = "1"
