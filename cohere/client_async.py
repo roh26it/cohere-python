@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from dataclasses import asdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Union
 
 import aiohttp
 import backoff
@@ -20,6 +20,7 @@ from cohere.responses import (
     Classification,
     Classifications,
     ClusterJobResult,
+    Dataset,
     DetectLanguageResponse,
     Detokenization,
     Embeddings,
@@ -490,13 +491,12 @@ class AsyncClient(Client):
 
     async def create_bulk_embed_job(
         self,
-        input_file_url: str,
+        input_dataset: Union[str, Dataset],
         model: Optional[str] = None,
         truncate: Optional[str] = None,
         compress: Optional[bool] = None,
         compression_codebook: Optional[str] = None,
         text_field: Optional[str] = None,
-        output_format: Optional[str] = None,
     ) -> AsyncCreateBulkEmbedJobResponse:
         """Create bulk embed job.
 
@@ -507,20 +507,26 @@ class AsyncClient(Client):
             compress (Optional[bool], optional): Use embedding compression. Defaults to None.
             compression_codebook (Optional[str], optional): Embedding compression codebook. Defaults to None.
             text_field (Optional[str], optional): Name of the column containing text to embed. Defaults to None.
-            output_format (Optional[str], optional): Output format and file extension. Defaults to None.
 
         Returns:
             AsyncCreateBulkEmbedJobResponse: Created bulk embed job handler
         """
 
+        if isinstance(input_dataset, str):
+            input_dataset_id = input_dataset
+        elif isinstance(input_dataset, Dataset):
+            input_dataset_id = input_dataset.id
+        else:
+            raise CohereError(message="input_dataset must either a string or Dataset")
+
         json_body = {
-            "input_file_url": input_file_url,
+            "input_dataset_id": input_dataset_id,
             "model": model,
             "truncate": truncate,
             "compress": compress,
             "compression_codebook": compression_codebook,
             "text_field": text_field,
-            "output_format": output_format,
+            "output_format": "avro",
         }
 
         response = await self._request(cohere.BULK_EMBED_JOBS_URL, json=json_body)
@@ -600,6 +606,17 @@ class AsyncClient(Client):
             timeout=timeout,
             interval=interval,
         )
+
+    async def create_dataset(self, name: str, data: BinaryIO, dataset_type: str) -> Dataset:
+        files = {"file": data}
+        create_response = await self._request(f"{cohere.DATASET_URL}?name={name}&type={dataset_type}", files=files)
+        return await self.get_dataset(id=create_response["id"])
+
+    async def get_dataset(self, id: str) -> Dataset:
+        if not id:
+            raise CohereError(message="id must not be empty")
+        response = await self._request(f"{cohere.DATASET_URL}/{id}", method="GET")
+        return Dataset.from_dict(response["dataset"])
 
 
 class AIOHTTPBackend:

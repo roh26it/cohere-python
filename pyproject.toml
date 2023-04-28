@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cohere"
+name = "cohere-dataset-beta"
 version = "4.1.5"
 description = ""
 authors = ["Cohere"]

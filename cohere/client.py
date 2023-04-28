@@ -745,13 +745,12 @@ class Client:
 
     def create_bulk_embed_job(
         self,
-        input_dataset_id: str,
+        input_dataset: Union[str, Dataset],
         model: Optional[str] = None,
         truncate: Optional[str] = None,
         compress: Optional[bool] = None,
         compression_codebook: Optional[str] = None,
         text_field: Optional[str] = None,
-        output_format: Optional[str] = None,
     ) -> CreateBulkEmbedJobResponse:
         """Create bulk embed job.
 
@@ -762,11 +761,17 @@ class Client:
             compress (Optional[bool], optional): Use embedding compression. Defaults to None.
             compression_codebook (Optional[str], optional): Embedding compression codebook. Defaults to None.
             text_field (Optional[str], optional): Name of the column containing text to embed. Defaults to None.
-            output_format (Optional[str], optional): Output format and file extension. Defaults to None.
 
         Returns:
             CreateBulkEmbedJobResponse: Created bulk embed job handler
         """
+
+        if isinstance(input_dataset, str):
+            input_dataset_id = input_dataset
+        elif isinstance(input_dataset, Dataset):
+            input_dataset_id = input_dataset.id
+        else:
+            raise CohereError(message="input_dataset must either a string or Dataset")
 
         json_body = {
             "input_dataset_id": input_dataset_id,
@@ -775,7 +780,7 @@ class Client:
             "compress": compress,
             "compression_codebook": compression_codebook,
             "text_field": text_field,
-            "output_format": output_format,
+            "output_format": "avro",
         }
 
         response = self._request(cohere.BULK_EMBED_JOBS_URL, json=json_body)
