@@ -201,21 +201,6 @@ pyflakes = ">=1.1.0,<3"
 tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 
 [[package]]
-name = "avro-python3"
-version = "1.10.2"
-description = "Avro is a serialization and RPC framework."
-category = "main"
-optional = false
-python-versions = ">=3.5"
-files = [
-    {file = "avro-python3-1.10.2.tar.gz", hash = "sha256:3b63f24e6b04368c3e4a6f923f484be0230d821aad65ac36108edbff29e9aaab"},
-]
-
-[package.extras]
-snappy = ["python-snappy"]
-zstandard = ["zstandard"]
-
-[[package]]
 name = "Babel"
 version = "2.12.0"
 description = "Internationalization utilities"
@@ -1590,4 +1575,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7, <4.0"
-content-hash = "9561b214da3ef504d571cea3b1c2f3b95bad36f56751afcbebfb1f1de513d08e"
+content-hash = "bed76967a668092db1cedf17d74dfed4ba1312c400b509be6b8953261608b856"
