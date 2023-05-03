@@ -817,7 +817,10 @@ class Client:
             raise ValueError('"job_id" is empty')
 
         response = self._request(f"{cohere.BULK_EMBED_JOBS_URL}/{job_id}", method="GET")
-        return BulkEmbedJob.from_dict(response)
+        job = BulkEmbedJob.from_dict(response)
+        if response.get("output_dataset_id"):
+            job.output = self.get_dataset(response.get("output_dataset_id"))
+        return job
 
     def cancel_bulk_embed_job(self, job_id: str) -> None:
         """Cancel bulk embed job.

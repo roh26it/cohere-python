@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from cohere.responses.base import CohereObject
+from cohere.responses.dataset import Dataset
 from cohere.utils import JobWithStatus
 
 
@@ -15,6 +16,7 @@ class BulkEmbedJob(CohereObject, JobWithStatus):
     truncate: str
     percent_complete: float
     meta: Optional[Dict[str, Any]]
+    output: Dataset
 
     def __init__(
         self,
