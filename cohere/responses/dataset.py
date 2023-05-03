@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from fastavro import reader
 
+from cohere.error import CohereError
 from cohere.responses.base import CohereObject
 
 
@@ -35,6 +36,9 @@ class Dataset(CohereObject):
 
     def open(self):
         for part in self.dataset_parts:
+            # todo stream lines back instead
+            if "result" not in self.dataset_type:
+                raise CohereError(message="cannot open input dataset")
             resp = requests.get(part.url, stream=True)
             for record in reader(resp.raw):
                 yield record
