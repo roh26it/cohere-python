@@ -35,9 +35,9 @@ from cohere.responses import (
     SummarizeResponse,
     Tokens,
 )
-from cohere.responses.bulk_embed import AsyncCreateBulkEmbedJobResponse, BulkEmbedJob
 from cohere.responses.chat import AsyncChat, StreamingChat
 from cohere.responses.classify import Example as ClassifyExample
+from cohere.responses.embed_job import AsyncCreateEmbedJobResponse, EmbedJob
 from cohere.utils import async_wait_for_job, is_api_key_valid, np_json_dumps
 
 JSON = Union[Dict, List]
@@ -489,7 +489,7 @@ class AsyncClient(Client):
             interval=interval,
         )
 
-    async def create_bulk_embed_job(
+    async def create_embed_job(
         self,
         input_dataset: Union[str, Dataset],
         model: Optional[str] = None,
@@ -497,8 +497,8 @@ class AsyncClient(Client):
         compress: Optional[bool] = None,
         compression_codebook: Optional[str] = None,
         text_field: Optional[str] = None,
-    ) -> AsyncCreateBulkEmbedJobResponse:
-        """Create bulk embed job.
+    ) -> AsyncCreateEmbedJobResponse:
+        """Create embed job.
 
         Args:
             input_file_url (str): File with texts to embed.
@@ -509,7 +509,7 @@ class AsyncClient(Client):
             text_field (Optional[str], optional): Name of the column containing text to embed. Defaults to None.
 
         Returns:
-            AsyncCreateBulkEmbedJobResponse: Created bulk embed job handler
+            AsyncCreateEmbedJobResponse: Created embed job handler
         """
 
         if isinstance(input_dataset, str):
@@ -529,47 +529,47 @@ class AsyncClient(Client):
             "output_format": "avro",
         }
 
-        response = await self._request(cohere.BULK_EMBED_JOBS_URL, json=json_body)
+        response = await self._request(cohere.EMBED_JOBS_URL, json=json_body)
 
-        return AsyncCreateBulkEmbedJobResponse.from_dict(
+        return AsyncCreateEmbedJobResponse.from_dict(
             response,
-            wait_fn=self.wait_for_bulk_embed_job,
+            wait_fn=self.wait_for_embed_job,
         )
 
-    async def list_bulk_embed_jobs(self) -> List[BulkEmbedJob]:
-        """List bulk embed jobs.
+    async def list_embed_jobs(self) -> List[EmbedJob]:
+        """List embed jobs.
 
         Returns:
-            List[BulkEmbedJob]: Bulk embed jobs.
+            List[EmbedJob]: embed jobs.
         """
 
-        response = await self._request(f"{cohere.BULK_EMBED_JOBS_URL}/list", method="GET")
-        return [BulkEmbedJob.from_dict({"meta": response.get("meta"), **r}) for r in response["bulk_embed_jobs"]]
+        response = await self._request(f"{cohere.EMBED_JOBS_URL}/list", method="GET")
+        return [EmbedJob.from_dict({"meta": response.get("meta"), **r}) for r in response["bulk_embed_jobs"]]
 
-    async def get_bulk_embed_job(self, job_id: str) -> BulkEmbedJob:
-        """Get bulk embed job.
+    async def get_embed_job(self, job_id: str) -> EmbedJob:
+        """Get embed job.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): embed job id.
 
         Raises:
             ValueError: "job_id" is empty
 
         Returns:
-            BulkEmbedJob: Bulk embed job.
+            EmbedJob: embed job.
         """
 
         if not job_id.strip():
             raise ValueError('"job_id" is empty')
 
-        response = await self._request(f"{cohere.BULK_EMBED_JOBS_URL}/{job_id}", method="GET")
-        return BulkEmbedJob.from_dict(response)
+        response = await self._request(f"{cohere.EMBED_JOBS_URL}/{job_id}", method="GET")
+        return EmbedJob.from_dict(response)
 
-    async def cancel_bulk_embed_job(self, job_id: str) -> None:
-        """Cancel bulk embed job.
+    async def cancel_embed_job(self, job_id: str) -> None:
+        """Cancel embed job.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): embed job id.
 
         Raises:
             ValueError: "job_id" is empty
@@ -578,18 +578,18 @@ class AsyncClient(Client):
         if not job_id.strip():
             raise ValueError('"job_id" is empty')
 
-        await self._request(f"{cohere.BULK_EMBED_JOBS_URL}/{job_id}/cancel", method="POST", json={})
+        await self._request(f"{cohere.EMBED_JOBS_URL}/{job_id}/cancel", method="POST", json={})
 
-    async def wait_for_bulk_embed_job(
+    async def wait_for_embed_job(
         self,
         job_id: str,
         timeout: Optional[float] = None,
         interval: float = 10,
-    ) -> BulkEmbedJob:
-        """Wait for bulk embed job completion.
+    ) -> EmbedJob:
+        """Wait for embed job completion.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): embed job id.
             timeout (Optional[float], optional): Wait timeout in seconds, if None - there is no limit to the wait time.
                 Defaults to None.
             interval (float, optional): Wait poll interval in seconds. Defaults to 10.
@@ -598,11 +598,11 @@ class AsyncClient(Client):
             TimeoutError: wait timed out
 
         Returns:
-            BulkEmbedJob: Bulk embed job.
+            EmbedJob: embed job.
         """
 
         return await async_wait_for_job(
-            get_job=partial(self.get_bulk_embed_job, job_id),
+            get_job=partial(self.get_embed_job, job_id),
             timeout=timeout,
             interval=interval,
         )

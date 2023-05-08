@@ -21,13 +21,13 @@ from cohere.responses import (
     StreamingGenerations,
     Tokens,
 )
-from cohere.responses.bulk_embed import BulkEmbedJob, CreateBulkEmbedJobResponse
 from cohere.responses.chat import Chat, StreamingChat
 from cohere.responses.classify import Example as ClassifyExample
 from cohere.responses.classify import LabelPrediction
 from cohere.responses.cluster import ClusterJobResult, CreateClusterJobResponse
 from cohere.responses.dataset import Dataset
 from cohere.responses.detectlang import DetectLanguageResponse, Language
+from cohere.responses.embed_job import CreateEmbedJobResponse, EmbedJob
 from cohere.responses.embeddings import Embeddings
 from cohere.responses.feedback import (
     GenerateFeedbackResponse,
@@ -586,6 +586,7 @@ class Client:
 
     def create_dataset(self, name: str, data: BinaryIO, dataset_type: str) -> Dataset:
         files = {"file": data}
+        logger.warning("uploading file...")
         create_response = self._request(f"{cohere.DATASET_URL}?name={name}&type={dataset_type}", files=files)
         return self.get_dataset(id=create_response["id"])
 
@@ -743,7 +744,7 @@ class Client:
             interval=interval,
         )
 
-    def create_bulk_embed_job(
+    def create_embed_job(
         self,
         input_dataset: Union[str, Dataset],
         model: Optional[str] = None,
@@ -751,8 +752,8 @@ class Client:
         compress: Optional[bool] = None,
         compression_codebook: Optional[str] = None,
         text_field: Optional[str] = None,
-    ) -> CreateBulkEmbedJobResponse:
-        """Create bulk embed job.
+    ) -> CreateEmbedJobResponse:
+        """Create embed job.
 
         Args:
             input_file_url (str): File with texts to embed.
@@ -763,7 +764,7 @@ class Client:
             text_field (Optional[str], optional): Name of the column containing text to embed. Defaults to None.
 
         Returns:
-            CreateBulkEmbedJobResponse: Created bulk embed job handler
+            CreateEmbedJobResponse: Created embed job handler
         """
 
         if isinstance(input_dataset, str):
@@ -783,50 +784,50 @@ class Client:
             "output_format": "avro",
         }
 
-        response = self._request(cohere.BULK_EMBED_JOBS_URL, json=json_body)
+        response = self._request(cohere.EMBED_JOBS_URL, json=json_body)
 
-        return CreateBulkEmbedJobResponse.from_dict(
+        return CreateEmbedJobResponse.from_dict(
             response,
-            wait_fn=self.wait_for_bulk_embed_job,
+            wait_fn=self.wait_for_embed_job,
         )
 
-    def list_bulk_embed_jobs(self) -> List[BulkEmbedJob]:
-        """List bulk embed jobs.
+    def list_embed_jobs(self) -> List[EmbedJob]:
+        """List embed jobs.
 
         Returns:
-            List[BulkEmbedJob]: Bulk embed jobs.
+            List[EmbedJob]: Embed jobs.
         """
 
-        response = self._request(f"{cohere.BULK_EMBED_JOBS_URL}/list", method="GET")
-        return [BulkEmbedJob.from_dict({"meta": response.get("meta"), **r}) for r in response["bulk_embed_jobs"]]
+        response = self._request(f"{cohere.EMBED_JOBS_URL}/list", method="GET")
+        return [EmbedJob.from_dict({"meta": response.get("meta"), **r}) for r in response["bulk_embed_jobs"]]
 
-    def get_bulk_embed_job(self, job_id: str) -> BulkEmbedJob:
-        """Get bulk embed job.
+    def get_embed_job(self, job_id: str) -> EmbedJob:
+        """Get embed job.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): Embed job id.
 
         Raises:
             ValueError: "job_id" is empty
 
         Returns:
-            BulkEmbedJob: Bulk embed job.
+            EmbedJob: Embed job.
         """
 
         if not job_id.strip():
             raise ValueError('"job_id" is empty')
 
-        response = self._request(f"{cohere.BULK_EMBED_JOBS_URL}/{job_id}", method="GET")
-        job = BulkEmbedJob.from_dict(response)
+        response = self._request(f"{cohere.EMBED_JOBS_URL}/{job_id}", method="GET")
+        job = EmbedJob.from_dict(response)
         if response.get("output_dataset_id"):
             job.output = self.get_dataset(response.get("output_dataset_id"))
         return job
 
-    def cancel_bulk_embed_job(self, job_id: str) -> None:
-        """Cancel bulk embed job.
+    def cancel_embed_job(self, job_id: str) -> None:
+        """Cancel embed job.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): Embed job id.
 
         Raises:
             ValueError: "job_id" is empty
@@ -835,18 +836,18 @@ class Client:
         if not job_id.strip():
             raise ValueError('"job_id" is empty')
 
-        self._request(f"{cohere.BULK_EMBED_JOBS_URL}/{job_id}/cancel", method="POST", json={})
+        self._request(f"{cohere.EMBED_JOBS_URL}/{job_id}/cancel", method="POST", json={})
 
-    def wait_for_bulk_embed_job(
+    def wait_for_embed_job(
         self,
         job_id: str,
         timeout: Optional[float] = None,
         interval: float = 10,
-    ) -> BulkEmbedJob:
-        """Wait for bulk embed job completion.
+    ) -> EmbedJob:
+        """Wait for embed job completion.
 
         Args:
-            job_id (str): Bulk embed job id.
+            job_id (str): Embed job id.
             timeout (Optional[float], optional): Wait timeout in seconds, if None - there is no limit to the wait time.
                 Defaults to None.
             interval (float, optional): Wait poll interval in seconds. Defaults to 10.
@@ -855,11 +856,11 @@ class Client:
             TimeoutError: wait timed out
 
         Returns:
-            BulkEmbedJob: Bulk embed job.
+            EmbedJob: Embed job.
         """
 
         return wait_for_job(
-            get_job=partial(self.get_bulk_embed_job, job_id),
+            get_job=partial(self.get_embed_job, job_id),
             timeout=timeout,
             interval=interval,
         )
