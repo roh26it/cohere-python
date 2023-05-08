@@ -1,3 +1,5 @@
+import csv
+import json
 from typing import Any, Dict, List
 
 import requests
@@ -5,6 +7,8 @@ from fastavro import reader
 
 from cohere.error import CohereError
 from cohere.responses.base import CohereObject
+
+supported_formats = ["jsonl", "csv"]
 
 
 class Dataset(CohereObject):
@@ -40,3 +44,24 @@ class Dataset(CohereObject):
             resp = requests.get(url, stream=True)
             for record in reader(resp.raw):
                 yield record
+
+    def save(self, filepath: str, format: str = "jsonl"):
+        if format == "jsonl":
+            return self.save_jsonl(filepath)
+        if format == "csv":
+            return self.save_csv(filepath)
+        raise CohereError(message=f"unsupported format must be one of : {supported_formats}")
+
+    def save_jsonl(self, filepath: str):
+        with open(filepath, "w") as outfile:
+            for data in self.open():
+                json.dump(data, outfile)
+                outfile.write("\n")
+
+    def save_csv(self, filepath: str):
+        with open(filepath, "w") as outfile:
+            for i, data in enumerate(self.open()):
+                if i == 0:
+                    writer = csv.DictWriter(outfile, fieldnames=list(data.keys()))
+                    writer.writeheader()
+                writer.writerow(data)
